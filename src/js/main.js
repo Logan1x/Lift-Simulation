@@ -1,13 +1,13 @@
-// const section = document.getElementById("container");
+const section = document.getElementById("container");
 
-const noOfFloors = 4;
-const noOfLifts = 3;
+const noOfFloors = 6;
+const noOfLifts = 2;
 
 const liftsState = [];
 
 for (let i = 0; i < noOfLifts; i++) {
   liftsState.push({
-    currentFloor: 0,
+    currentFloor: 1,
     status: "free",
   });
 }
@@ -15,42 +15,115 @@ for (let i = 0; i < noOfLifts; i++) {
 console.log("liftsState initially:");
 console.log(liftsState);
 
-const handleClick = (floorNumber) => {
-  // check if lift is already on the floor
-
-  const isLiftAlreadyOnFloor = liftsState.some(
-    (lift) => lift.currentFloor == floorNumber
-  );
-
-  if (isLiftAlreadyOnFloor) return;
-
-  // if lift is not on the desired platform, then move the lift there. for that, find the minimum distance between desired floor and any available lift
-  const freeLiftArr = liftsState.reduce((acc, lift) => {
-    if (lift.status === "free") {
-      return [...acc, Math.abs(lift.currentFloor - floorNumber)];
+const findMin = (freeLiftArr) => {
+  let min = freeLiftArr[0].gap;
+  for (let i = 0; i < freeLiftArr.length; i++) {
+    if (freeLiftArr[i].gap < min) {
+      min = freeLiftArr[i].gap;
     }
+  }
+  return min;
+};
+
+const checkIfLiftAlreadyOnFloor = (floorNumber) => {
+  return liftsState.some((lift) => lift.currentFloor === floorNumber);
+};
+
+const getFreeLifts = (floorNumber) => {
+  return liftsState.reduce((acc, lift) => {
+    if (lift.status === "free") {
+      return [
+        ...acc,
+        {
+          floor: lift.currentFloor,
+          gap: Math.abs(lift.currentFloor - floorNumber),
+        },
+      ];
+    }
+    return acc;
   }, []);
+};
 
-  console.log("freeLiftArr: ", freeLiftArr);
+const findMinGapFreeLift = (freeLiftArr) => {
+  const minGap = findMin(freeLiftArr);
+  return freeLiftArr.find((lift) => lift.gap === minGap);
+};
 
-  const firstFreeLiftIndex = freeLiftArr.findIndex(
-    (num) => num === Math.min(...freeLiftArr)
+const getFreeLiftsWithFloor = (floor) => {
+  return liftsState.find(
+    (lift) => lift.currentFloor === floor && lift.status === "free"
   );
+};
 
-  liftsState[firstFreeLiftIndex].status = "busy";
-  liftsState[firstFreeLiftIndex].currentFloor = floorNumber;
+const updateLiftStatusAndFloor = (lift, floorNumber) => {
+  lift.status = "busy";
+  lift.currentFloor = floorNumber;
   setTimeout(() => {
-    liftsState[firstFreeLiftIndex].status = "free";
+    lift.status = "free";
+    renderFloors();
   }, 1000);
 };
 
-handleClick(1);
-handleClick(3);
+const createFloor = (floorNumber) => {
+  const floor = document.createElement("div");
+  floor.classList.add("floor");
+  floor.innerText = floorNumber;
 
-console.log("liftsState after handleClick:");
-console.log(liftsState);
+  const buttonContainer = document.createElement("div");
+  const upButton = document.createElement("button");
+  const downButton = document.createElement("button");
+  upButton.innerText = "up";
+  downButton.innerText = "down";
+  upButton.addEventListener("click", () => handleClick(floorNumber));
+  downButton.addEventListener("click", () => handleClick(floorNumber));
+  buttonContainer.appendChild(upButton);
+  buttonContainer.appendChild(downButton);
+  buttonContainer.classList.add("button-container");
+  floor.appendChild(buttonContainer);
 
-setTimeout(() => {
-  console.log("liftsState after handleClick:");
-  console.log(liftsState);
-}, 1000);
+  const liftContainer = document.createElement("div");
+  liftContainer.classList.add("lift-container");
+  liftsState.forEach((lift) => {
+    if (lift.currentFloor === floorNumber) {
+      const liftDiv = document.createElement("div");
+      liftDiv.classList.add("lift");
+      liftDiv.innerText = "Lift";
+      liftContainer.appendChild(liftDiv);
+    } else {
+      const liftDiv = document.createElement("div");
+      liftDiv.classList.add("lift");
+      liftDiv.innerText = "";
+      liftContainer.appendChild(liftDiv);
+    }
+  });
+
+  floor.appendChild(liftContainer);
+
+  section.appendChild(floor);
+};
+
+const renderFloors = () => {
+  section.innerHTML = "";
+  for (let i = noOfFloors; i > 0; i--) {
+    createFloor(i);
+  }
+};
+
+const handleClick = (floorNumber) => {
+  const isLiftAlreadyOnFloor = checkIfLiftAlreadyOnFloor(floorNumber);
+
+  if (isLiftAlreadyOnFloor) {
+    console.log("lift already on the floor");
+    return;
+  }
+
+  const freeLiftArr = getFreeLifts(floorNumber);
+  const minGapFreeLift = findMinGapFreeLift(freeLiftArr);
+  const freeLifts = getFreeLiftsWithFloor(minGapFreeLift.floor);
+
+  if (freeLifts) {
+    updateLiftStatusAndFloor(freeLifts, floorNumber);
+  }
+};
+
+renderFloors();
