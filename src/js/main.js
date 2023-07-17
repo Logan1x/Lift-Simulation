@@ -57,11 +57,24 @@ const getFreeLiftsWithFloor = (floor) => {
 
 const updateLiftStatusAndFloor = (lift, floorNumber) => {
   lift.status = "busy";
-  lift.currentFloor = floorNumber;
+
+  const liftContainer = document.querySelector(".lift-container");
+  const liftDiv = liftContainer.querySelector(`.lift-${lift.currentFloor}`);
+  const floorHeight = 6.5; // Adjust this value based on your CSS
+
+  const distance = Math.abs(lift.currentFloor - floorNumber) * floorHeight;
+  const animationDuration = distance * 100; // Adjust the animation speed as needed
+
+  liftDiv.style.transitionDuration = `${animationDuration}ms`;
+  liftDiv.style.transform = `translateY(-${distance}rem)`;
+
   setTimeout(() => {
+    liftDiv.style.transitionDuration = "0ms";
+    liftDiv.style.transform = "";
+    lift.currentFloor = floorNumber;
     lift.status = "free";
     renderFloors();
-  }, 1000);
+  }, animationDuration);
 };
 
 const createFloor = (floorNumber) => {
@@ -92,6 +105,7 @@ const createFloor = (floorNumber) => {
     } else {
       const liftDiv = document.createElement("div");
       liftDiv.classList.add("lift");
+      liftDiv.classList.add(`lift-${lift.currentFloor}`);
       liftDiv.innerText = "";
       liftContainer.appendChild(liftDiv);
     }
